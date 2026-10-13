@@ -32,6 +32,10 @@
       --star-color: rgba(255, 255, 255, 0.7);
       --mc-cyan: #06b6d4;
       --mc-cyan-glow: rgba(6, 182, 212, 0.35);
+      --timer-warning: #f59e0b;
+      --timer-warning-glow: rgba(245, 158, 11, 0.28);
+      --timer-danger: #ef4444;
+      --timer-danger-glow: rgba(239, 68, 68, 0.35);
       --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
 
@@ -63,6 +67,10 @@
         --star-color: rgba(99, 102, 241, 0.3);
         --mc-cyan: #0284c7;
         --mc-cyan-glow: rgba(2, 132, 199, 0.25);
+        --timer-warning: #b45309;
+        --timer-warning-glow: rgba(180, 83, 9, 0.18);
+        --timer-danger: #b91c1c;
+        --timer-danger-glow: rgba(185, 28, 28, 0.2);
         --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       }
     }
@@ -169,6 +177,56 @@
       color: var(--text-muted);
       margin-bottom: 8px;
       font-weight: 500;
+    }
+
+    .timer-readout {
+      padding: 2px 8px;
+      border: 1px solid var(--opt-border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      transition: color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .timer-readout.warning {
+      color: var(--timer-warning);
+      border-color: var(--timer-warning);
+      box-shadow: 0 0 10px var(--timer-warning-glow);
+      animation: timerPulse 1s ease-in-out infinite;
+    }
+
+    .timer-readout.danger {
+      color: var(--timer-danger);
+      border-color: var(--timer-danger);
+      box-shadow: 0 0 12px var(--timer-danger-glow);
+      animation: timerPulse 0.55s ease-in-out infinite;
+    }
+
+    @keyframes timerPulse {
+      50% { opacity: 0.62; }
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .timer-readout.warning,
+      .timer-readout.danger {
+        animation: none;
+      }
     }
 
     .progress-bar-track {
@@ -652,8 +710,10 @@
     <section class="progress-section" aria-label="Quiz progress">
       <div class="progress-meta">
         <span id="questionStep">Question 1 of 10</span>
+        <span id="timerReadout" class="timer-readout" role="timer" aria-label="15 seconds remaining">T- 00:15</span>
         <span id="progressPercent">10%</span>
       </div>
+      <span id="timerStatus" class="sr-only" aria-live="polite" aria-atomic="true"></span>
       <div class="progress-bar-track" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100" id="progressBarRole">
         <div class="progress-bar-fill" id="progressBarFill"></div>
       </div>
@@ -781,6 +841,9 @@
     let currentIdx = 0;
     let score = 0;
     let hasAnswered = false;
+    let countdownInterval = null;
+    let questionDeadline = 0;
+    let warningAnnounced = false;
 
     // DOM Elements
     const questionView = document.getElementById("questionView");
@@ -799,8 +862,46 @@
     const progressSection = document.querySelector(".progress-section");
     const nextBtn = document.getElementById("nextBtn");
     const restartBtn = document.getElementById("restartBtn");
+    const timerReadout = document.getElementById("timerReadout");
+    const timerStatus = document.getElementById("timerStatus");
 
     const optionKeys = ["A", "B", "C", "D"];
+    const QUESTION_TIME_LIMIT_MS = 15000;
+
+    function stopCountdown() {
+      if (countdownInterval !== null) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    }
+
+    function updateCountdown() {
+      const secondsRemaining = Math.max(0, Math.ceil((questionDeadline - performance.now()) / 1000));
+      timerReadout.textContent = `T- 00:${String(secondsRemaining).padStart(2, "0")}`;
+      timerReadout.setAttribute("aria-label", `${secondsRemaining} seconds remaining`);
+
+      timerReadout.classList.toggle("warning", secondsRemaining <= 5 && secondsRemaining > 0);
+      timerReadout.classList.toggle("danger", secondsRemaining <= 2 && secondsRemaining > 0);
+
+      if (secondsRemaining > 0 && secondsRemaining <= 5 && !warningAnnounced) {
+        warningAnnounced = true;
+        timerStatus.textContent = `${secondsRemaining} seconds remaining.`;
+      }
+
+      if (secondsRemaining === 0) {
+        handleSelectOption(null, null);
+      }
+    }
+
+    function startCountdown() {
+      stopCountdown();
+      questionDeadline = performance.now() + QUESTION_TIME_LIMIT_MS;
+      warningAnnounced = false;
+      timerStatus.textContent = "";
+      timerReadout.classList.remove("warning", "danger");
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 200);
+    }
 
     function updateProgress() {
       const currentNumber = currentIdx + 1;
@@ -815,6 +916,7 @@
     }
 
     function renderQuestion() {
+      stopCountdown();
       hasAnswered = false;
       const q = questions[currentIdx];
 
@@ -826,6 +928,7 @@
       explanationBox.classList.remove("show");
       nextBtn.style.display = "none";
       nextBtn.textContent = currentIdx === questions.length - 1 ? "View Mission Results →" : "Next Question →";
+      startCountdown();
 
       q.options.forEach((optText, index) => {
         const btn = document.createElement("button");
@@ -846,19 +949,34 @@
     function handleSelectOption(selectedIndex, selectedBtn) {
       if (hasAnswered) return;
       hasAnswered = true;
+      stopCountdown();
 
       const q = questions[currentIdx];
-      const isCorrect = selectedIndex === q.answerIndex;
+      const isTimeout = selectedIndex === null;
+      const isCorrect = !isTimeout && selectedIndex === q.answerIndex;
       const allButtons = optionsGrid.querySelectorAll(".option-btn");
 
-      // Mark selected button with aria and status
-      selectedBtn.setAttribute("aria-pressed", "true");
-      selectedBtn.classList.add("selected");
+      if (selectedBtn) {
+        selectedBtn.setAttribute("aria-pressed", "true");
+        selectedBtn.classList.add("selected");
+      }
 
       // Disable buttons to prevent spamming
       allButtons.forEach(btn => btn.disabled = true);
 
-      if (isCorrect) {
+      if (isTimeout) {
+        const correctBtn = allButtons[q.answerIndex];
+        if (correctBtn) {
+          correctBtn.classList.add("reveal-correct");
+          correctBtn.querySelector(".option-icon").textContent = "✓";
+          const correctTlm = correctBtn.querySelector(".option-telemetry");
+          if (correctTlm) correctTlm.textContent = "[SYS // TARGET]";
+        }
+
+        explanationTitle.className = "explanation-title is-wrong";
+        explanationTitle.innerHTML = "<span>⏱️ [TIME // EXPIRED]</span>";
+        timerStatus.textContent = "Time expired. The correct answer is revealed.";
+      } else if (isCorrect) {
         score++;
         scoreCounter.textContent = score;
         selectedBtn.classList.add("correct");
@@ -895,6 +1013,7 @@
     }
 
     function showResults() {
+      stopCountdown();
       questionView.style.display = "none";
       progressSection.style.display = "none";
       resultsScreen.style.display = "block";
