@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Space Exploration Quiz</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(21, 29, 46, 0.92);
+      --card-border: rgba(99, 102, 241, 0.2);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-glow: rgba(99, 102, 241, 0.35);
+      --opt-bg: #182236;
+      --opt-border: #2c3954;
+      --opt-hover: #22304d;
+      --opt-text: #e2e8f0;
+      --correct-bg: #064e3b;
+      --correct-border: #10b981;
+      --correct-text: #ecfdf5;
+      --correct-glow: rgba(16, 185, 129, 0.45);
+      --wrong-bg: #7f1d1d;
+      --wrong-border: #ef4444;
+      --wrong-text: #fef2f2;
+      --wrong-glow: rgba(239, 68, 68, 0.45);
+      --bar-bg: #1c273e;
+      --bar-fill: linear-gradient(90deg, #6366f1, #06b6d4, #10b981);
+      --card-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--card-border);
+      --star-color: rgba(255, 255, 255, 0.7);
+      --mc-cyan: #06b6d4;
+      --mc-cyan-glow: rgba(6, 182, 212, 0.35);
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f1f5f9;
+        --card-bg: rgba(255, 255, 255, 0.95);
+        --card-border: rgba(99, 102, 241, 0.25);
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --accent: #4f46e5;
+        --accent-hover: #4338ca;
+        --accent-glow: rgba(79, 70, 229, 0.25);
+        --opt-bg: #f8fafc;
+        --opt-border: #cbd5e1;
+        --opt-hover: #edf2f7;
+        --opt-text: #1e293b;
+        --correct-bg: #d1fae5;
+        --correct-border: #059669;
+        --correct-text: #065f46;
+        --correct-glow: rgba(16, 185, 129, 0.35);
+        --wrong-bg: #fee2e2;
+        --wrong-border: #dc2626;
+        --wrong-text: #991b1b;
+        --wrong-glow: rgba(239, 68, 68, 0.35);
+        --bar-bg: #e2e8f0;
+        --bar-fill: linear-gradient(90deg, #4f46e5, #0284c7, #059669);
+        --card-shadow: 0 16px 32px -6px rgba(15, 23, 42, 0.1), 0 0 0 1px var(--card-border);
+        --star-color: rgba(99, 102, 241, 0.3);
+        --mc-cyan: #0284c7;
+        --mc-cyan-glow: rgba(2, 132, 199, 0.25);
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--text);
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse at 20% 15%, rgba(99, 102, 241, 0.18) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 85%, rgba(236, 72, 153, 0.14) 0%, transparent 45%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 14px;
+    }
+
+    /* Narrow centered column */
+    .quiz-container {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    /* Cosmic Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-icon {
+      font-size: 22px;
+      line-height: 1;
+      display: inline-block;
+      animation: floatRocket 3s ease-in-out infinite;
+    }
+
+    @keyframes floatRocket {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-3px) rotate(4deg); }
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      background: var(--opt-bg);
+      border: 1px solid var(--opt-border);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .score-badge span.score-num {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* Progress section */
+    .progress-section {
+      margin-bottom: 20px;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .progress-bar-track {
+      width: 100%;
+      height: 8px;
+      background: var(--bar-bg);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--bar-fill);
+      border-radius: 9999px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Card Content */
+    .category-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      background: var(--opt-bg);
+      border: 1px solid var(--card-border);
+      padding: 3px 9px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .question-title {
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.4;
+      margin-bottom: 18px;
+      min-height: 48px;
+    }
+
+    /* Options List */
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .option-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      text-align: left;
+      padding: 11px 13px;
+      background: var(--opt-bg);
+      border: 1.5px solid var(--opt-border);
+      border-radius: 8px;
+      color: var(--opt-text);
+      font-family: inherit;
+      font-size: 14.5px;
+      font-weight: 500;
+      cursor: pointer;
+      position: relative;
+      outline: none;
+      transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+      user-select: none;
+    }
+
+    /* Mission Control telemetry corner reticles */
+    .option-btn::before,
+    .option-btn::after {
+      content: "";
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      pointer-events: none;
+      opacity: 0.35;
+      transition: all 0.2s ease;
+    }
+
+    .option-btn::before {
+      top: -1px;
+      left: -1px;
+      border-top: 2px solid var(--accent);
+      border-left: 2px solid var(--accent);
+    }
+
+    .option-btn::after {
+      bottom: -1px;
+      right: -1px;
+      border-bottom: 2px solid var(--accent);
+      border-right: 2px solid var(--accent);
+    }
+
+    .option-btn:hover:not(:disabled) {
+      background: var(--opt-hover);
+      border-color: var(--mc-cyan);
+      transform: translateY(-1px);
+    }
+
+    .option-btn:hover:not(:disabled)::before,
+    .option-btn:hover:not(:disabled)::after {
+      opacity: 1;
+      border-color: var(--mc-cyan);
+      width: 8px;
+      height: 8px;
+    }
+
+    .option-btn:focus-visible {
+      border-color: var(--mc-cyan);
+      box-shadow: 0 0 0 3px var(--mc-cyan-glow);
+    }
+
+    .option-key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      background: rgba(148, 163, 184, 0.15);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-right: 12px;
+      flex-shrink: 0;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .option-text {
+      flex: 1;
+      padding-right: 8px;
+    }
+
+    /* Mission control telemetry tag badge */
+    .option-telemetry {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      opacity: 0;
+      margin-right: 6px;
+      white-space: nowrap;
+      transition: opacity 0.2s ease;
+    }
+
+    .option-icon {
+      font-size: 16px;
+      font-weight: 700;
+      flex-shrink: 0;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+    }
+
+    /* Mission Control: Selected element telemetry mode */
+    .option-btn.selected {
+      border-color: var(--mc-cyan) !important;
+      background: var(--opt-hover) !important;
+      box-shadow: 0 0 14px var(--mc-cyan-glow), inset 0 0 0 1px var(--mc-cyan) !important;
+    }
+
+    .option-btn.selected::before,
+    .option-btn.selected::after {
+      opacity: 1;
+      border-color: var(--mc-cyan);
+      width: 10px;
+      height: 10px;
+    }
+
+    .option-btn.selected .option-key {
+      background: var(--mc-cyan);
+      color: #fff;
+    }
+
+    .option-btn.selected .option-telemetry {
+      opacity: 0.85;
+      color: var(--mc-cyan);
+    }
+
+    /* Correct Feedback Animation */
+    .option-btn.correct {
+      background: var(--correct-bg) !important;
+      border-color: var(--correct-border) !important;
+      color: var(--correct-text) !important;
+      box-shadow: 0 0 16px var(--correct-glow), inset 0 0 12px rgba(16, 185, 129, 0.18) !important;
+      animation: pulseGreen 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .option-btn.correct::before,
+    .option-btn.correct::after {
+      opacity: 1;
+      border-color: var(--correct-border);
+      width: 10px;
+      height: 10px;
+    }
+
+    .option-btn.correct .option-key {
+      background: var(--correct-border);
+      color: #fff;
+    }
+
+    .option-btn.correct .option-telemetry {
+      opacity: 1;
+      color: var(--correct-border);
+    }
+
+    .option-btn.correct .option-icon {
+      opacity: 1;
+      transform: scale(1);
+      color: var(--correct-border);
+    }
+
+    @keyframes pulseGreen {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+
+    /* Wrong Feedback Animation - Colorful red shake */
+    .option-btn.wrong {
+      background: var(--wrong-bg) !important;
+      border-color: var(--wrong-border) !important;
+      color: var(--wrong-text) !important;
+      box-shadow: 0 0 16px var(--wrong-glow), inset 0 0 12px rgba(239, 68, 68, 0.18) !important;
+      animation: redShake 0.45s ease-in-out;
+    }
+
+    .option-btn.wrong::before,
+    .option-btn.wrong::after {
+      opacity: 1;
+      border-color: var(--wrong-border);
+      width: 10px;
+      height: 10px;
+    }
+
+    .option-btn.wrong .option-key {
+      background: var(--wrong-border);
+      color: #fff;
+    }
+
+    .option-btn.wrong .option-telemetry {
+      opacity: 1;
+      color: var(--wrong-border);
+    }
+
+    .option-btn.wrong .option-icon {
+      opacity: 1;
+      transform: scale(1);
+      color: var(--wrong-border);
+    }
+
+    @keyframes redShake {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-8px); }
+      30% { transform: translateX(7px); }
+      45% { transform: translateX(-6px); }
+      60% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
+      90% { transform: translateX(2px); }
+    }
+
+    /* Highlight correct answer when wrong choice was made */
+    .option-btn.reveal-correct {
+      border-color: var(--correct-border) !important;
+      background: rgba(16, 185, 129, 0.14) !important;
+      color: var(--text) !important;
+    }
+
+    .option-btn.reveal-correct::before,
+    .option-btn.reveal-correct::after {
+      opacity: 1;
+      border-color: var(--correct-border);
+      width: 10px;
+      height: 10px;
+    }
+
+    .option-btn.reveal-correct .option-telemetry {
+      opacity: 1;
+      color: var(--correct-border);
+    }
+
+    .option-btn.reveal-correct .option-icon {
+      opacity: 1;
+      transform: scale(1);
+      color: var(--correct-border);
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+    }
+
+    /* Explanation Banner */
+    .explanation-box {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--opt-bg);
+      border: 1px solid var(--card-border);
+      font-size: 13.5px;
+      line-height: 1.45;
+      display: none;
+      animation: fadeInSlide 0.3s ease forwards;
+    }
+
+    .explanation-box.show {
+      display: block;
+    }
+
+    .explanation-title {
+      font-weight: 700;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .explanation-title.is-correct {
+      color: var(--correct-border);
+    }
+
+    .explanation-title.is-wrong {
+      color: var(--wrong-border);
+    }
+
+    @keyframes fadeInSlide {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Footer & Action Button */
+    .action-row {
+      margin-top: 18px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 22px;
+      background: var(--accent);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 14.5px;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      outline: none;
+      transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .action-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .action-btn:active {
+      transform: translateY(0);
+    }
+
+    .action-btn:focus-visible {
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* Results Screen */
+    .results-screen {
+      text-align: center;
+      padding: 10px 4px;
+      animation: fadeInSlide 0.4s ease forwards;
+    }
+
+    .result-emoji-bubble {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 44px;
+      border-radius: 50%;
+      background: var(--opt-bg);
+      border: 2px solid var(--card-border);
+      box-shadow: 0 8px 24px var(--accent-glow);
+      animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.4); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .result-rank {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .result-desc {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 22px;
+      padding: 0 8px;
+    }
+
+    .stats-card {
+      background: var(--opt-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .restart-btn {
+      width: 100%;
+      padding: 13px 20px;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="quiz-container" id="quizContainer">
+    <!-- Top Header -->
+    <header class="header">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">🚀</span>
+        <h1 class="brand-title">Cosmic Quiz</h1>
+      </div>
+      <div class="score-badge" aria-label="Score counter">
+        <span>Score:</span>
+        <span class="score-num" id="scoreCounter">0</span>
+        <span style="color: var(--text-muted);">/ 10</span>
+      </div>
+    </header>
+
+    <!-- Progress Tracker -->
+    <section class="progress-section" aria-label="Quiz progress">
+      <div class="progress-meta">
+        <span id="questionStep">Question 1 of 10</span>
+        <span id="progressPercent">10%</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100" id="progressBarRole">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+      </div>
+    </section>
+
+    <!-- Question View -->
+    <div id="questionView">
+      <div class="category-tag" id="questionCategory">Manned Spaceflight</div>
+      <h2 class="question-title" id="questionText">Loading mission inquiry...</h2>
+
+      <div class="options-grid" id="optionsGrid" role="group" aria-label="Answer options">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Animated feedback snippet -->
+      <div class="explanation-box" id="explanationBox">
+        <div class="explanation-title" id="explanationTitle"></div>
+        <div id="explanationText"></div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="action-row">
+        <button class="action-btn" id="nextBtn" style="display: none;">Next Question &rarr;</button>
+      </div>
+    </div>
+
+    <!-- Results Screen (Hidden initially) -->
+    <div id="resultsScreen" class="results-screen" style="display: none;">
+      <div class="result-emoji-bubble" id="resultEmoji">🚀</div>
+      <h2 class="result-rank" id="resultRank">Mission Complete!</h2>
+      <p class="result-desc" id="resultDesc">Your mission debrief is ready.</p>
+
+      <div class="stats-card">
+        <div class="stat-item">
+          <div class="stat-val" id="finalScoreVal">0/10</div>
+          <div class="stat-label">Final Score</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="accuracyVal">0%</div>
+          <div class="stat-label">Accuracy</div>
+        </div>
+      </div>
+
+      <button class="action-btn restart-btn" id="restartBtn">
+        <span>Restart Mission</span>
+        <span>↺</span>
+      </button>
+    </div>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        category: "Pioneering Cosmonauts",
+        question: "Who was the first human to travel into outer space in 1961?",
+        options: ["Alan Shepard", "Yuri Gagarin", "Neil Armstrong", "John Glenn"],
+        answerIndex: 1,
+        fact: "Soviet cosmonaut Yuri Gagarin completed a single orbit around Earth in Vostok 1 on April 12, 1961."
+      },
+      {
+        category: "Lunar Exploration",
+        question: "In which year did Apollo 11 land the first humans on the Moon?",
+        options: ["1967", "1969", "1971", "1973"],
+        answerIndex: 1,
+        fact: "Neil Armstrong and Buzz Aldrin stepped onto the Sea of Tranquility on July 20, 1969."
+      },
+      {
+        category: "Mars Exploration",
+        question: "Which NASA rover landed on Mars in 2021 carrying the Ingenuity helicopter?",
+        options: ["Curiosity", "Opportunity", "Perseverance", "Spirit"],
+        answerIndex: 2,
+        fact: "Perseverance touched down in Jezero Crater and Ingenuity achieved the first powered flight on another planet."
+      },
+      {
+        category: "Space Observatories",
+        question: "Which observatory, launched in December 2021, orbits the Sun-Earth L2 Lagrange point?",
+        options: ["Hubble Telescope", "James Webb Telescope", "Kepler Telescope", "Spitzer Observatory"],
+        answerIndex: 1,
+        fact: "The James Webb Space Telescope uses infrared imaging to view ancient galaxies over 13.5 billion light-years away."
+      },
+      {
+        category: "Deep Space Probes",
+        question: "Which probe, launched in 1977, is currently the farthest human-made object from Earth?",
+        options: ["Voyager 1", "Voyager 2", "Pioneer 10", "New Horizons"],
+        answerIndex: 0,
+        fact: "Voyager 1 crossed into interstellar space in August 2012 and is over 24 billion km from Earth."
+      },
+      {
+        category: "Next-Gen Lunar Program",
+        question: "What is the name of NASA's ongoing program to return humans to the lunar surface?",
+        options: ["Apollo Next", "Orion Dawn", "Artemis", "Chronos"],
+        answerIndex: 2,
+        fact: "Named after Apollo's twin sister in Greek mythology, Artemis aims to land the first woman and person of color on the Moon."
+      },
+      {
+        category: "Heavy Launch Vehicles",
+        question: "What historic rocket propelled the Apollo missions to the Moon?",
+        options: ["Titan IV", "Saturn V", "Atlas V", "Falcon Heavy"],
+        answerIndex: 1,
+        fact: "Standing 110 meters tall, the Saturn V generated an astonishing 7.5 million pounds of thrust."
+      },
+      {
+        category: "Planetary Landers",
+        question: "On which extreme planet did the Soviet Venera 7 probe make the first successful soft landing?",
+        options: ["Venus", "Mars", "Mercury", "Jupiter"],
+        answerIndex: 0,
+        fact: "In 1970, Venera 7 survived 475°C temperatures and crushing pressure to transmit data directly from Venus's surface."
+      },
+      {
+        category: "Orbital Stations",
+        question: "What orbital habitat has been continuously occupied by international crews since November 2000?",
+        options: ["Mir", "Skylab", "Tiangong", "International Space Station"],
+        answerIndex: 3,
+        fact: "The ISS orbits Earth every 90 minutes at approximately 28,000 km/h (17,500 mph)."
+      },
+      {
+        category: "Outer Solar System",
+        question: "Which spacecraft made history in 2015 with the first close flyby of Pluto?",
+        options: ["Dawn", "Cassini", "New Horizons", "Juno"],
+        answerIndex: 2,
+        fact: "New Horizons revealed Pluto's nitrogen ice heart glacier (Tombaugh Regio) and mountains of water ice."
+      }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+    let hasAnswered = false;
+
+    // DOM Elements
+    const questionView = document.getElementById("questionView");
+    const resultsScreen = document.getElementById("resultsScreen");
+    const scoreCounter = document.getElementById("scoreCounter");
+    const questionStep = document.getElementById("questionStep");
+    const progressPercent = document.getElementById("progressPercent");
+    const progressBarFill = document.getElementById("progressBarFill");
+    const progressBarRole = document.getElementById("progressBarRole");
+    const questionCategory = document.getElementById("questionCategory");
+    const questionText = document.getElementById("questionText");
+    const optionsGrid = document.getElementById("optionsGrid");
+    const explanationBox = document.getElementById("explanationBox");
+    const explanationTitle = document.getElementById("explanationTitle");
+    const explanationText = document.getElementById("explanationText");
+    const progressSection = document.querySelector(".progress-section");
+    const nextBtn = document.getElementById("nextBtn");
+    const restartBtn = document.getElementById("restartBtn");
+
+    const optionKeys = ["A", "B", "C", "D"];
+
+    function updateProgress() {
+      const currentNumber = currentIdx + 1;
+      const total = questions.length;
+      const pct = Math.round((currentNumber / total) * 100);
+
+      questionStep.textContent = `Question ${currentNumber} of ${total}`;
+      progressPercent.textContent = `${pct}%`;
+      progressBarFill.style.width = `${pct}%`;
+      progressBarRole.setAttribute("aria-valuenow", pct);
+      scoreCounter.textContent = score;
+    }
+
+    function renderQuestion() {
+      hasAnswered = false;
+      const q = questions[currentIdx];
+
+      updateProgress();
+      questionCategory.textContent = q.category;
+      questionText.textContent = q.question;
+      optionsGrid.innerHTML = "";
+      explanationBox.className = "explanation-box";
+      explanationBox.classList.remove("show");
+      nextBtn.style.display = "none";
+      nextBtn.textContent = currentIdx === questions.length - 1 ? "View Mission Results →" : "Next Question →";
+
+      q.options.forEach((optText, index) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.setAttribute("type", "button");
+        btn.setAttribute("aria-pressed", "false");
+        btn.innerHTML = `
+          <span class="option-key">${optionKeys[index]}</span>
+          <span class="option-text">${optText}</span>
+          <span class="option-telemetry" aria-hidden="true">[CH-${optionKeys[index]}]</span>
+          <span class="option-icon" aria-hidden="true"></span>
+        `;
+        btn.addEventListener("click", () => handleSelectOption(index, btn));
+        optionsGrid.appendChild(btn);
+      });
+    }
+
+    function handleSelectOption(selectedIndex, selectedBtn) {
+      if (hasAnswered) return;
+      hasAnswered = true;
+
+      const q = questions[currentIdx];
+      const isCorrect = selectedIndex === q.answerIndex;
+      const allButtons = optionsGrid.querySelectorAll(".option-btn");
+
+      // Mark selected button with aria and status
+      selectedBtn.setAttribute("aria-pressed", "true");
+      selectedBtn.classList.add("selected");
+
+      // Disable buttons to prevent spamming
+      allButtons.forEach(btn => btn.disabled = true);
+
+      if (isCorrect) {
+        score++;
+        scoreCounter.textContent = score;
+        selectedBtn.classList.add("correct");
+        selectedBtn.querySelector(".option-icon").textContent = "✓";
+        const tlmTag = selectedBtn.querySelector(".option-telemetry");
+        if (tlmTag) tlmTag.textContent = "[LOCK // CONFIRMED]";
+
+        explanationTitle.className = "explanation-title is-correct";
+        explanationTitle.innerHTML = "<span>🎉 Correct!</span>";
+      } else {
+        selectedBtn.classList.add("wrong");
+        selectedBtn.querySelector(".option-icon").textContent = "✕";
+        const tlmTag = selectedBtn.querySelector(".option-telemetry");
+        if (tlmTag) tlmTag.textContent = "[ERR // ANOMALY]";
+
+        // Highlight correct option
+        const correctBtn = allButtons[q.answerIndex];
+        if (correctBtn) {
+          correctBtn.classList.add("reveal-correct");
+          correctBtn.querySelector(".option-icon").textContent = "✓";
+          const correctTlm = correctBtn.querySelector(".option-telemetry");
+          if (correctTlm) correctTlm.textContent = "[SYS // TARGET]";
+        }
+
+        explanationTitle.className = "explanation-title is-wrong";
+        explanationTitle.innerHTML = "<span>☄️ Incorrect</span>";
+      }
+
+      explanationText.textContent = q.fact;
+      explanationBox.classList.add("show");
+
+      nextBtn.style.display = "inline-flex";
+      nextBtn.focus();
+    }
+
+    function showResults() {
+      questionView.style.display = "none";
+      progressSection.style.display = "none";
+      resultsScreen.style.display = "block";
+
+      const total = questions.length;
+      const accuracy = Math.round((score / total) * 100);
+      document.getElementById("finalScoreVal").textContent = `${score}/${total}`;
+      document.getElementById("accuracyVal").textContent = `${accuracy}%`;
+
+      const emojiEl = document.getElementById("resultEmoji");
+      const rankEl = document.getElementById("resultRank");
+      const descEl = document.getElementById("resultDesc");
+
+      if (score === 10) {
+        emojiEl.textContent = "🚀";
+        rankEl.textContent = "Cosmic Legend! 🌟";
+        descEl.textContent = "Flawless navigation! You possess master-level command of space exploration history.";
+      } else if (score >= 8) {
+        emojiEl.textContent = "👨‍🚀";
+        rankEl.textContent = "Flight Commander! 🛸";
+        descEl.textContent = "Superb mission execution. You have an exceptional grasp of space exploration.";
+      } else if (score >= 6) {
+        emojiEl.textContent = "🛰️";
+        rankEl.textContent = "Orbital Specialist! 🔭";
+        descEl.textContent = "Solid telemetry! With a little more review, you'll be charting deep space routes.";
+      } else if (score >= 4) {
+        emojiEl.textContent = "🪐";
+        rankEl.textContent = "Space Cadet! 🌠";
+        descEl.textContent = "Off the launch pad! Review key missions and launch your knowledge into orbit.";
+      } else {
+        emojiEl.textContent = "☄️";
+        rankEl.textContent = "Stargazer in Training! 🌌";
+        descEl.textContent = "Every great astronaut started somewhere. Review the debrief and try again!";
+      }
+    }
+
+    nextBtn.addEventListener("click", () => {
+      if (currentIdx < questions.length - 1) {
+        currentIdx++;
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    });
+
+    restartBtn.addEventListener("click", () => {
+      currentIdx = 0;
+      score = 0;
+      resultsScreen.style.display = "none";
+      progressSection.style.display = "block";
+      questionView.style.display = "block";
+      renderQuestion();
+    });
+
+    // Keyboard support: numeric keys 1-4 or A-D, Enter/Space for advance
+    document.addEventListener("keydown", (e) => {
+      if (resultsScreen.style.display !== "none") {
+        if (e.key === "Enter" || e.key === " ") {
+          restartBtn.click();
+        }
+        return;
+      }
+
+      if (!hasAnswered) {
+        const key = e.key.toUpperCase();
+        let targetIdx = -1;
+        if (key === "1" || key === "A") targetIdx = 0;
+        else if (key === "2" || key === "B") targetIdx = 1;
+        else if (key === "3" || key === "C") targetIdx = 2;
+        else if (key === "4" || key === "D") targetIdx = 3;
+
+        if (targetIdx >= 0) {
+          const btns = optionsGrid.querySelectorAll(".option-btn");
+          if (btns[targetIdx]) {
+            btns[targetIdx].click();
+          }
+        }
+      } else {
+        if (nextBtn.style.display !== "none" && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          nextBtn.click();
+        }
+      }
+    });
+
+    // Initialize Quiz
+    renderQuestion();
+  </script>
+</body>
+</html>
